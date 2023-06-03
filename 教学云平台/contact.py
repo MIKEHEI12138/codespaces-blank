@@ -6,7 +6,7 @@ import threading
 
 
 # 连接数据库
-connection = pymysql.connect(host='10.128.250.177', user='root', password='123456', db='teaching_cloud_platform',
+connection = pymysql.connect(host='localhost', user='root', password='123456', db='teaching_cloud_platform',
                              charset='utf8mb4')
 
 def getName():
@@ -92,22 +92,17 @@ def update_messages():
 
 
 def contact_button(currentStu):
-    #用于保存登录教师的信息
+    #用于保存登录学生的信息
     global cs
-    cs = currentStu
+    cs=currentStu
     # 创建主窗口
     global window
     window = tk.Tk()
     window.title("Chat Application")
-    #window.geometry("1000x600+100+200")
 
     # 创建联系人列表框
-    global contacts_frame
-    contacts_frame = tk.Frame(window, width=200)
-    contacts_frame.pack(side=tk.LEFT, fill=tk.Y)
-
     global contacts_list
-    contacts_list = tk.Listbox(contacts_frame)
+    contacts_list = tk.Listbox(window)
     contacts_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     contacts_list.bind('<<ListboxSelect>>', contact_selected)
 
@@ -134,7 +129,7 @@ def contact_button(currentStu):
 
     # 创建发送按钮
     global send_button
-    send_button = tk.Button(dialog_frame, text="Send", command=send_button_clicked, pady=50)
+    send_button = tk.Button(dialog_frame, text="Send", command=send_button_clicked)
     send_button.pack(side=tk.LEFT)
 
     # 获取联系人列表
@@ -145,7 +140,6 @@ def contact_button(currentStu):
     for contact in contacts:
         contacts_list.insert(tk.END, contact[0])
 
-    update_messages()
     # 开始主循环
     window.mainloop()
 

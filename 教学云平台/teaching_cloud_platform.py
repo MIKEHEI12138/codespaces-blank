@@ -8,7 +8,8 @@ import reply
 import course_management
 import Optional_course
 import assignment_management
-connection = pymysql.connect(host='10.128.250.177', user='root', password='123456', db='teaching_cloud_platform',
+import StuAssignment
+connection = pymysql.connect(host='localhost', user='root', password='123456', db='teaching_cloud_platform',
                              charset='utf8mb4')
 
 
@@ -61,7 +62,7 @@ class Teacher:
 
 
 def get_conn():
-    conn = pymysql.connect(host='10.128.250.177', port=3306, user='root', passwd='123456',
+    conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='123456',
                            database='teaching_cloud_platform')  # 数据库名字改下
     return conn
 
@@ -121,6 +122,13 @@ def open_teacherside(cursor):  # 教师端登录界面
     btn01_1 = Button(teacherside, command=lambda: login(entry01.get(), entry02.get(), cursor, "Teachers"))
     btn01_1["text"] = "登录"
     btn01_1.place(relx=0.6, rely=0.8, relheight=0.1, width=120)
+
+    background_image01 = PhotoImage(file="G:/191.png")  # 替换图片路径,像素大小500x375
+    background_label01 = Label(teacherside, image=background_image01)
+    background_label01.place(x=0, y=0, relwidth=1, relheight=1)
+
+    teacherside.image = background_image01
+
 
 
 def open_studentside(cursor):  # 学生端登录界面
@@ -655,13 +663,18 @@ def studentside_alreadyopen():
     stu_course_list.bind("<<ListboxSelect>>", manage_course)
     option_button=Button(new1_window,text="公选课选课",command=lambda :Optional_course.init_course(currentStu))
     option_button.pack()
+    #作业的提交功能
+    submit_button=Button(new1_window,text='提交作业',command=lambda :StuAssignment.submmit_button(currentStu))
+    submit_button.pack()
 def init_window(cursor):
     global root
     root = Tk()
     root.title("教学云平台")
     root.geometry("500x300+100+200")
 
-
+    background_image = PhotoImage(file="E:/111.png")  # 替换图片路径,像素大小500x375
+    background_label = Label(root, image=background_image)
+    background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
     btn01 = Button(root, command=lambda :open_teacherside(cursor), text="教师端登录", font=("华文新魏", 14), relief=RAISED)
     btn01.place(relx=0.3, rely=0.7, relheight=0.1, width=200)

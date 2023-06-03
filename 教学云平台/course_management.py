@@ -3,7 +3,7 @@ import pymysql
 import tkinter.ttk as ttk
 from tkinter import messagebox
 # 连接数据库
-connection = pymysql.connect(host='10.128.250.177', user='root', password='123456', db='teaching_cloud_platform', charset='utf8mb4')
+connection = pymysql.connect(host='localhost', user='root', password='123456', db='teaching_cloud_platform', charset='utf8mb4')
 
 # 获取课程信息并插入到左侧列表中
 def insert_list():

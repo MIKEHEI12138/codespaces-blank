@@ -6,11 +6,11 @@ import threading
 
 
 # 连接数据库
-connection = pymysql.connect(host='10.128.250.177', user='root', password='123456', db='teaching_cloud_platform',
+connection = pymysql.connect(host='localhost', user='root', password='123456', db='teaching_cloud_platform',
                              charset='utf8mb4')
 
 def get_conn():
-    connection = pymysql.connect(host='10.128.250.177', user='root', password='123456', db='teaching_cloud_platform',
+    connection = pymysql.connect(host='localhost', user='root', password='123456', db='teaching_cloud_platform',
                                  charset='utf8mb4')
     return connection
 
@@ -100,15 +100,12 @@ def reply_button(currentTch):
     global window
     window = tk.Tk()
     window.title("Chat Application")
-    #window.geometry("1000x600+100+200")
+    window.geometry("2560x1920+100+200")
+
 
     # 创建联系人列表框
-    global contacts_frame
-    contacts_frame = tk.Frame(window, width=200)
-    contacts_frame.pack(side=tk.LEFT, fill=tk.Y)
-
     global contacts_list
-    contacts_list = tk.Listbox(contacts_frame)
+    contacts_list = tk.Listbox(window, width=50)
     contacts_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     contacts_list.bind('<<ListboxSelect>>', contact_selected)
 

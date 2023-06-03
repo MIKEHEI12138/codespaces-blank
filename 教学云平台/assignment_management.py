@@ -1,14 +1,14 @@
 import tkinter
 import tkinter as tk
 import tkinter.ttk as ttk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 import pymysql
 import matplotlib.pyplot as plt
 # 连接数据库
-connection = pymysql.connect(host='10.128.250.177', user='root', password='123456', db='teaching_cloud_platform', charset='utf8mb4')
+connection = pymysql.connect(host='localhost', user='root', password='123456', db='teaching_cloud_platform', charset='utf8mb4')
 
 def get_conn():
-    connection = pymysql.connect(host='10.128.250.177', user='root', password='123456', db='teaching_cloud_platform', charset='utf8mb4')
+    connection = pymysql.connect(host='localhost', user='root', password='123456', db='teaching_cloud_platform', charset='utf8mb4')
     return connection
 
 cursor = connection.cursor()
@@ -28,20 +28,63 @@ def send_assignment():
         values = (course_id, ct.teacher_id, selected_assignment)
         cursor.execute(sql, values)
         connection.commit()
-
         # 清空作业列表
-        assignment_listbox.delete(0, tk.END)
+        tree.delete(*tree.get_children())
 
         # 更新作业列表
         assignments = get_assignments(course_id)
         for assignment in assignments:
-            assignment_listbox.insert(tk.END, f"{assignment[3]}")
+            tree.insert("",tk.END, values=(assignment[3],assignment[0]))
 
         messagebox.showinfo("成功", "作业已成功群发给所有学生！")
     else:
         messagebox.showerror("错误", "请选择课程并填写作业内容！")
 
 
+#统计本次作业的提交情况起到辅助预测的作用
+def Assisted_prediction(event):
+    # 检查是否存在旧窗口并关闭
+    if 'new_window' in globals():
+        new_window.destroy()
+
+    with connection.cursor() as cursor:
+        selected_item = tree.focus()
+        if selected_item:  # 如果有选中的项
+            result = tree.item(selected_item)["values"]
+            id=result[1]
+        teacher_id=ct.teacher_id
+        #查找对应课程
+        sql = 'select CourseID from Assignment where id = %s '
+        cursor.execute(sql,(id))
+        course_id=cursor.fetchall()[0][0]
+        #统计需要提交的人数
+        sql='select count(*) from CourseStudent where  CourseID = %s and teacherID = %s'
+        cursor.execute(sql,(course_id,teacher_id))
+        num=cursor.fetchall()[0][0]
+
+        #统计提交的人数
+        sql='select count(*) from submithomework where CourseID = %s and teacherID = %s and ID = %s'
+        cursor.execute(sql,(course_id,teacher_id,id))
+        sub_num=cursor.fetchall()[0][0]
+
+        #未提交人数
+        a=num-sub_num
+
+        #定义数据
+        labels=['The number of submissions','Number of non-submissions']
+        sizes=[sub_num,a]
+
+        # 创建饼状图
+        plt.pie(sizes, labels=labels, autopct='%1.1f%%')
+
+        # 设置图表标题
+        plt.title('Assignment submission status')
+        # 显示图表
+        plt.show()
+
+        #辅助预测功能
+        if a>sub_num:
+            messagebox.showwarning("警告:","半数以上同学未交作业，请教师加以督促")
 # 获取指定课程的作业
 def get_assignments(course_id):
     cursor.execute("SELECT * FROM assignment WHERE CourseID = %s", (course_id,))
@@ -71,14 +114,14 @@ def select_course(event):
     assignment_statistics(selected_course)
     if selected_course:
         # 清空作业列表
-        assignment_listbox.delete(0, tk.END)
+        tree.delete(*tree.get_children())
         course_id = selected_course.split()[0][:5]
 
         assignments = get_assignments(course_id)
 
         # 显示作业列表
         for assignment in assignments:
-            assignment_listbox.insert(tk.END, f"{assignment[3]}")
+            tree.insert("", tk.END, values=(assignment[3], assignment[0]))
 
 def scatter_plot(x,y):
     plt.title('Assignment Statistics')
@@ -127,6 +170,72 @@ def assignment_statistics(selected_course):
         Button2 = tk.Button(new_window, text='柱状图',command=lambda:bar_chart(x,y))
         Button2.pack()
 
+#得到作业号对应的课程号
+def getass_courseid(assignment_id):
+    cursor.execute("SELECT CourseID FROM submithomework WHERE id = %s", (assignment_id))
+    result = cursor.fetchone()
+    CourseID = result[0] if result else 0
+    return CourseID
+
+def view_submitted_homework():
+    # 创建窗口
+    submitted_window = tk.Toplevel(window)
+    submitted_window.title("已提交作业")
+
+    # 创建作业列表
+    submitted_tree = ttk.Treeview(submitted_window, columns=("1", "2", "3"), show="headings")
+    # 设置列标题
+    submitted_tree.heading("1", text="作业号")
+    submitted_tree.heading("2", text="作业内容")
+    submitted_tree.heading("3", text="学生id")
+
+    submitted_tree.pack()
+
+    selected_items = tree.selection()
+    if selected_items:
+        # 获取选中的作业信息
+        item = tree.item(selected_items)
+        values = item['values']
+        assignment_id = values[1]  # 作业号
+        requirement = values[0]  # 作业内容
+
+        # 查询已提交作业
+        course_id = getass_courseid(assignment_id)
+        sql = "SELECT id, content, StudentID FROM submithomework WHERE id = %s"
+        cursor.execute(sql, (assignment_id,))
+        submitted_assignments = cursor.fetchall()
+
+        # 在作业列表中显示已提交作业
+        for assignment in submitted_assignments:
+            assignment_id = assignment[0]
+            content = assignment[1]
+            student_id = assignment[2]
+            submitted_tree.insert("", tk.END, values=(assignment_id, content, student_id))
+
+    # 创建下载按钮和相关函数
+    def download_assignment():
+        selected_item = submitted_tree.selection()
+        if selected_item:
+            item = submitted_tree.item(selected_item)
+            values = item['values']
+            assignment_id = values[0]
+            content = values[1]
+            student_id = values[2]
+
+            # 创建保存文件对话框
+            file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[('Text Files', '*.txt')])
+            if file_path:
+                # 将作业内容保存到文件
+                with open(file_path, 'w') as f:
+                    f.write(content)
+
+                messagebox.showinfo("下载成功", "作业已成功下载。")
+        else:
+            messagebox.showwarning("未选中作业", "请先选中要下载的作业。")
+
+    download_button = tk.Button(submitted_window, text="下载作业", command=download_assignment)
+    download_button.pack(pady=10)
+
 def assignment_button(currentTch):
     global ct
     ct=currentTch
@@ -156,10 +265,14 @@ def assignment_button(currentTch):
 
     assignment_label = tk.Label(assignment_frame, text="作业列表")
     assignment_label.pack()
+    global tree
+    tree=ttk.Treeview(window,columns=("1","2"),show="headings")
+    #设置标题
+    tree.heading("1",text='作业内容')
+    tree.heading("2",text='作业ID')
+    tree.pack()
+    tree.bind("<<TreeviewSelect>>", lambda event: Assisted_prediction(event))
 
-    global assignment_listbox
-    assignment_listbox = tk.Listbox(assignment_frame, width=30)
-    assignment_listbox.pack()
 
     # 创建作业内容输入框和发送按钮
     message_frame = tk.Frame(window)
@@ -178,6 +291,9 @@ def assignment_button(currentTch):
     # 绑定选择课程事件
     course_listbox.bind("<<ListboxSelect>>", select_course)
 
+    # 创建查看已提交作业按钮
+    view_button = tk.Button(window, text="查看已提交作业", command=view_submitted_homework)
+    view_button.pack(pady=10)
 
 
     # 主事件循环
