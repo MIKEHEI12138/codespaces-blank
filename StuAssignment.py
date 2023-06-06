@@ -1,3 +1,5 @@
+import os
+import sys
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox, filedialog
@@ -127,7 +129,7 @@ def view_submitted_homework():
     # 设置窗口的位置
     submitted_window.geometry("{}x{}+{}+{}".format(window_width, window_height, x, y))
 
-    background_image27 = PhotoImage(file="2222.png")
+    background_image27 = PhotoImage(file=get_resource_path("images/2222.png"))
     background_label27 = Label(submitted_window, image=background_image27)
     background_label27.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -210,7 +212,7 @@ def submmit_button(currentStu,root):
 
     window2.resizable(False, False)
 
-    background_image03 = PhotoImage(file="2222.png")  # 替换图片路径,像素大小500x375
+    background_image03 = PhotoImage(file=get_resource_path("images/2222.png"))  # 替换图片路径,像素大小500x375
     background_label03 = Label(window2, image=background_image03)
     background_label03.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -261,5 +263,8 @@ def submmit_button(currentStu,root):
 
     # 关闭数据库连接
     connection.close()
-
+def get_resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 

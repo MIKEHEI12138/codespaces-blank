@@ -1,3 +1,5 @@
+import os
+import sys
 import tkinter
 
 import pymysql
@@ -84,7 +86,7 @@ def open_teacherside(cursor):  # 教师端登录界面
 
     teacherside.resizable(False, False)
 
-    background_image01 = PhotoImage(file="bg2_2.png")  # 替换图片路径,像素大小500x375
+    background_image01 = PhotoImage(file=get_resource_path("images/bg2_2.png"))  # 替换图片路径,像素大小500x375
     background_label01 = Label(teacherside, image=background_image01)
     background_label01.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -158,7 +160,7 @@ def open_studentside(cursor):  # 学生端登录界面
 
     studentside.resizable(False, False)
 
-    background_image11 = PhotoImage(file="bg2_2.png")  # 替换图片路径,像素大小500x375
+    background_image11 = PhotoImage(file=get_resource_path("images/bg2_2.png"))  # 替换图片路径,像素大小500x375
     background_label11 = Label(studentside, image=background_image11)
     background_label11.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -296,6 +298,18 @@ def addordelete(event, course_info):#改
     global awindow
     awindow = tkinter.Toplevel(manage_window)
     awindow.title("添加或删除")
+
+    window_width = 50
+    window_height = 60
+    # 计算窗口在屏幕中的坐标位置
+    x = (screen_width - window_width) // 2 -200
+    y = (screen_height - window_height) // 2 -150
+
+    # 设置窗口的位置
+    awindow.geometry("{}x{}+{}+{}".format(window_width, window_height, x, y))
+
+    awindow.resizable(False, False)
+
     add_button = Button(awindow, text='添加', command=lambda: add_single(course_info))
     add_button.pack()
     delete_button = Button(awindow, text='删除', command=lambda: delete_single(course_info))
@@ -371,13 +385,13 @@ def add_alot(course_info):
                     flag = 0
                     break  # 在回滚事务后跳出循环
                 else:
-                    if add_nownum(course_info) == '1':
+                    if add_nownum(course_info) == 1:
                         # 执行添加操作
                         sql = 'INSERT INTO CourseStudent (CourseID, StudentID,TeacherID) VALUES (%s, %s, %s)'
                         cursor.execute(sql, (course_info, str(startid), currentTch.teacher_id))
                         startid += 1
                         flag = 1
-                    elif add_nownum(course_info) == '0':
+                    elif add_nownum(course_info) == 0:
                         connection.rollback()
                         flag = 0
                         messagebox.showerror("Error", "课程人数已达到上线")
@@ -405,7 +419,7 @@ def delete_alot(course_info):
             endid = int(endto.get())
 
             while startid <= endid:
-                sql = 'SELECT * FROM Cours eStudent WHERE CourseID = %s AND StudentID = %s and TeacherID = %s'
+                sql = 'SELECT * FROM CourseStudent WHERE CourseID = %s AND StudentID = %s and TeacherID = %s'
                 cursor.execute(sql, (course_info, startid, currentTch.teacher_id))
                 result = cursor.fetchall()
                 if result:
@@ -440,11 +454,16 @@ def add_nownum(course_info):
         # 查询人数限额
         sql = 'SELECT num FROM CourseTeacher WHERE CourseID = %s AND TeacherID = %s'
         cursor.execute(sql, (course_info, currentTch.teacher_id))
-        num = int(cursor.fetchone()[0])
+        num = cursor.fetchone()[0]
+        if not num:
+            num=0
+
         # 查询旧的学生人数
         sql = 'SELECT now_num FROM CourseTeacher WHERE CourseID = %s AND TeacherID = %s'
         cursor.execute(sql, (course_info, currentTch.teacher_id))
-        oldnum = int(cursor.fetchone()[0])
+        oldnum=cursor.fetchone()[0]
+        if not oldnum:
+            oldnum=0
         if num == oldnum:
             return 0
         else:
@@ -498,44 +517,73 @@ def manage_stu(event):#改
     manage_window = tkinter.Toplevel(new_window)
     manage_window.title("学生课程信息管理")
     # 创建学生列表框
+
+    window_width = 500
+    window_height = 400
+    # 计算窗口在屏幕中的坐标位置
+    x = (screen_width - window_width) // 2
+    y = (screen_height - window_height) // 2
+
+    # 设置窗口的位置
+    manage_window.geometry("{}x{}+{}+{}".format(window_width, window_height, x, y))
+
+    manage_window.resizable(False, False)
+
+    background_image03 = PhotoImage(file=get_resource_path("images/222.png"))  # 替换图片路径,像素大小500x375
+    background_label03 = Label( manage_window, image=background_image03)
+    background_label03.place(x=0, y=0, relwidth=1, relheight=1)
+
+    manage_window.image = background_image03
+
+    Label1 = tkinter.Label(manage_window, text='学生信息',font='华文新魏',bg='white')
+    Label1.place(x=40,y=50,height=50)
+
+    Label2 = tkinter.Label(manage_window, text='from to', font='华文新魏', bg='white')
+    Label2.place(relx=0.5,rely=0.15, relheight=0.1)
+
     global stu_list
     stu_list = tkinter.Listbox(manage_window)
-    stu_list.place(x=40, y=100, width=200, height=200)
+    stu_list.place(x=40, y=100, width=200, height=220)
     insert_stu(course_info)
     # 批量加入删除
-    global startfrom
-    startfrom = tkinter.Entry(manage_window)
-    startfrom.pack()
-    global endto
-    endto = tkinter.Entry(manage_window)
-    endto.pack()
+    frame4 = Frame(manage_window, relief=SOLID,bg='white')
+    frame4.place(relx=0.5, rely=0.25, relwidth=0.35, relheight=0.6)
 
-    add_alotbutton = Button(manage_window, text='批量添加', command=lambda: add_alot(course_info))
-    add_alotbutton.pack()
-    delete_alotbutton = Button(manage_window, text='批量删除', command=lambda: delete_alot(course_info))
-    delete_alotbutton.pack()
+    global startfrom
+    startfrom = tkinter.Entry(frame4)
+    startfrom.place(relx=0,rely=0,relwidth=1,relheight=0.1)
+
+    global endto
+    endto = tkinter.Entry(frame4)
+    endto.place(relx=0,rely=0.1,relwidth=1,relheight=0.1)
+
+    add_alotbutton = Button(frame4, text='批量添加', command=lambda: add_alot(course_info))
+    add_alotbutton.place(relx=0,rely=0.2,relwidth=0.5,relheight=0.1)
+    delete_alotbutton = Button(frame4, text='批量删除', command=lambda: delete_alot(course_info))
+    delete_alotbutton.place(relx=0.5,rely=0.2,relwidth=0.5,relheight=0.1)
 
     # 设置课程人数
-    Label1 = tkinter.Label(manage_window, text='学生人数')
-    Label1.pack()
+    Label1 = tkinter.Label(frame4, text='学生人数')
+    Label1.place(relx=0,rely=0.3,relwidth=1,relheight=0.1)
     global entry1
-    entry1 = tkinter.Entry(manage_window)
-    entry1.pack()
-    set_stunum_button = Button(manage_window, text="设置学生人数", command=lambda: set_Stunum(course_info))
-    set_stunum_button.pack()
+    entry1 = tkinter.Entry(frame4)
+    entry1.place(relx=0,rely=0.4,relwidth=1,relheight=0.1)
+    set_stunum_button = Button(frame4, text="设置学生人数", command=lambda: set_Stunum(course_info))
+    set_stunum_button.place(relx=0,rely=0.5,relwidth=1,relheight=0.1)
 
     # 显示当前学生
-    Label2 = tkinter.Label(manage_window, text='当前学生人数')
-    Label2.pack()
+    Label2 = tkinter.Label(frame4, text='当前学生人数')
+    Label2.place(relx=0,rely=0.6,relwidth=1,relheight=0.1)
     global Label_stunum
-    Label_stunum = tkinter.Label(manage_window, text='0')
-    Label_stunum.pack()
+    Label_stunum = tkinter.Label(frame4, text='0')
+    Label_stunum.place(relx=0,rely=0.7,relwidth=1,relheight=0.1)
     update_Stunum(course_info)
-    update_stunum_button = Button(manage_window, text='刷新学生人数', command=lambda: update_Stunum(course_info))
-    update_stunum_button.pack()
+    update_stunum_button = Button(frame4, text='刷新学生人数', command=lambda: update_Stunum(course_info))
+    update_stunum_button.place(relx=0,rely=0.8,relwidth=1,relheight=0.1)
 
 
-def create_course_window():#改
+
+def create_course_window():
     # 创建新窗口
     global create_window
     create_window = Toplevel(new_window)
@@ -553,7 +601,7 @@ def create_course_window():#改
 
     create_window.resizable(False, False)
 
-    background_image05 = PhotoImage(file="222.png")  # 替换图片路径,像素大小500x375
+    background_image05 = PhotoImage(file=get_resource_path("images/222.png"))  # 替换图片路径,像素大小500x375
     background_label05 = Label(create_window, image=background_image05)
     background_label05.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -653,7 +701,7 @@ def teacherside_alreadyopen():
 
     new_window.resizable(False, False)
 
-    background_image03 = PhotoImage(file="222.png")  # 替换图片路径,像素大小500x375
+    background_image03 = PhotoImage(file=get_resource_path("images/222.png"))  # 替换图片路径,像素大小500x375
     background_label03 = Label(new_window, image=background_image03)
     background_label03.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -813,7 +861,7 @@ def studentside_alreadyopen():
 
     new1_window.resizable(False, False)
 
-    background_image03 = PhotoImage(file="222.png")  # 替换图片路径,像素大小500x375
+    background_image03 = PhotoImage(file=get_resource_path("images/222.png"))  # 替换图片路径,像素大小500x375
     background_label03 = Label(new1_window, image=background_image03)
     background_label03.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -905,7 +953,7 @@ def init_window(cursor):
 
     root.resizable(False, False)
 
-    background_image = PhotoImage(file="111.png")  # 替换图片路径,像素大小500x375
+    background_image = PhotoImage(file=get_resource_path("images/111.png"))  # 替换图片路径,像素大小500x375
     background_label = Label(root, image=background_image)
     background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -917,6 +965,11 @@ def init_window(cursor):
     btn02.place(relx=0.3, rely=0.8, relheight=0.1, width=200)
 
     root.mainloop()
+
+def get_resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
 
 if __name__ == '__main__':

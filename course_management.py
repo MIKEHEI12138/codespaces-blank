@@ -1,3 +1,5 @@
+import os
+import sys
 import tkinter as tk
 import pymysql
 from tkinter import *
@@ -81,7 +83,7 @@ def manage_button(currentTch,root):
     window.title("Course_management")
     # 创建联系人列表框
 
-    background_image26 = PhotoImage(file="3334.png")
+    background_image26 = PhotoImage(file=get_resource_path("images/3334.png"))
     background_label26 = Label(window, image=background_image26)
     background_label26.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -117,5 +119,8 @@ def manage_button(currentTch,root):
     delete_button=tk.Button(window,text="删除课程",command=delete_course)
     delete_button.place(relx=0.75, rely=0.6, relwidth=0.25,relheight=0.1)
     window.mainloop()
-
+def get_resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 

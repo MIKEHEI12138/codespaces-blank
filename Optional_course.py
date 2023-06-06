@@ -1,3 +1,5 @@
+import os
+import sys
 import tkinter
 import pymysql
 from tkinter import *
@@ -150,7 +152,7 @@ def init_course(currentStu,root):
     root1=Toplevel(root)
     root1.title("公选课选课平台")
 
-    background_image26 = PhotoImage(file="3333.png")
+    background_image26 = PhotoImage(file=get_resource_path("images/3333.png"))
     background_label26 = Label( root1, image=background_image26)
     background_label26.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -198,5 +200,8 @@ def init_course(currentStu,root):
     flash_button=Button(root1,text="刷新",bg='white',command=insert_tree)
     flash_button.pack()
     root1.mainloop()
-
+def get_resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
